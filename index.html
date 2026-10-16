@@ -13,6 +13,7 @@
       --muted: #c7aabd; --line: rgba(255, 111, 193, .27);
     }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0; color: #fff4fb; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -159,7 +160,7 @@
     </section>
 
     <section class="wrap" id="join">
-      <div class="section-head"><div><h2>JOIN THE FAMILY</h2><p class="sub">สมัครเข้าร่วมแก๊ง 773</p></div></div>
+      <div class="section-head"><div><h2>JOIN THE FAMILY</h2><p class="sub">ส่งคำขอ แล้วรอหัวหน้าแก๊งยืนยันก่อนเป็นสมาชิก</p></div></div>
       <div class="join-grid">
         <div class="panel">
           <form id="joinForm">
@@ -178,25 +179,53 @@
           <h3 style="margin-top:0">CONNECT WITH US</h3>
           <p class="sub">มาคุยและเล่นด้วยกันในชุมชนของเรา</p>
           <a class="btn" id="discordJoin" href="#join" style="width:100%;margin-top:12px">เปิด Discord ↗</a>
-          <p class="notice">ตั้งค่าลิงก์ Discord ของแก๊งก่อนเผยแพร่ โดยแก้ค่า <code>DISCORD_INVITE</code> ในโค้ดด้านล่าง</p>
+          <p class="notice">ลิงก์ Discord ของแก๊ง 773 พร้อมแล้ว กดปุ่มด้านบนเพื่อเข้าร่วมได้เลย</p>
           <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
           <div class="music-bar">
-            <div><strong>Background music</strong><div class="hint">เลือกเพลงจากมือถือของคุณ</div></div>
-            <button class="btn secondary" id="musicToggle" type="button">♫ เลือกเพลง</button>
+            <div><strong>Background music ♫</strong><div class="hint">เพลงจาก YouTube — กดเล่นในเครื่องเล่นด้านล่าง</div></div>
           </div>
-          <input id="musicFile" type="file" accept="audio/*" hidden>
-          <audio id="audio" loop></audio>
-          <p class="hint" id="musicStatus">ยังไม่ได้เลือกเพลง</p>
+          <div class="youtube-music" style="position:relative;width:100%;max-width:100%;aspect-ratio:16/9;min-height:200px;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:#160b15;margin-top:12px">
+            <iframe
+              id="youtubeMusic"
+              title="เพลงพื้นหลังแก๊ง 773"
+              src="https://www.youtube-nocookie.com/embed/WDcLrOOIq5k?autoplay=0&controls=1&loop=1&playlist=WDcLrOOIq5k&playsinline=1&rel=0"
+              style="position:absolute;inset:0;width:100%;height:100%;border:0"
+              loading="lazy"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+          </div>
+          <p class="hint" id="musicStatus">แตะปุ่มเล่นในวิดีโอเพื่อเริ่มเพลง เสียงอัตโนมัติอาจถูกบล็อกโดยเบราว์เซอร์มือถือ</p>
         </div>
       </div>
     </section>
   </main>
 
+
+    <section class="wrap" id="leader">
+      <div class="section-head"><div><h2>LEADER PANEL</h2><p class="sub">หัวหน้าแก๊งตรวจสอบคำขอเข้าร่วม</p></div></div>
+      <div class="panel">
+        <div id="leaderLogin">
+          <p class="hint">ส่วนนี้สำหรับหัวหน้าแก๊งเท่านั้น ใส่รหัสหัวหน้าเพื่อดูคำขอสมัคร</p>
+          <label for="leaderPin">รหัสหัวหน้า</label>
+          <input id="leaderPin" type="password" inputmode="numeric" maxlength="20" placeholder="ใส่รหัสหัวหน้า">
+          <button class="btn" id="leaderLoginBtn" type="button" style="margin-top:12px">เข้าสู่แผงหัวหน้า</button>
+          <div class="status" id="leaderStatus" role="status"></div>
+        </div>
+        <div id="leaderDashboard" hidden>
+          <div class="music-bar"><strong>คำขอที่รออนุมัติ</strong><button class="btn secondary" id="leaderLogout" type="button">ออกจากระบบ</button></div>
+          <div id="pendingList" style="margin-top:16px"></div>
+          <p class="hint">การอนุมัติจะเพิ่มสมาชิกลงในรายชื่อบนเบราว์เซอร์เครื่องนี้</p>
+        </div>
+      </div>
+    </section>
+
   <footer><div class="wrap">♡ 773 FAMILY · PINK WITH PRIDE ♡<br><span>เว็บไซต์ตัวอย่างที่แก้ไขและนำไปปรับใช้ได้</span></div></footer>
 
   <script>
     // 1) เปลี่ยนเป็นลิงก์เชิญ Discord ของคุณ เช่น https://discord.gg/yourcode
-    const DISCORD_INVITE = "";
+    const DISCORD_INVITE = "https://discord.gg/FcVWx86MR";
     // 2) ข้อมูลสมาชิกเริ่มต้น ปรับชื่อและตำแหน่งได้ตรงนี้
     const defaultMembers = [
       { name: "773 Leader", role: "หัวหน้าแก๊ง", initials: "773" },
@@ -204,7 +233,19 @@
       { name: "Moonie", role: "สมาชิก", initials: "✦" }
     ];
     const STORE_KEY = "gang773-members-v1";
+    const PENDING_KEY = "gang773-pending-v1";
+    // Demo only: change this PIN. Client-side PIN is not secure for a real online community.
+    const LEADER_PIN = "7730";
     const $ = (id) => document.getElementById(id);
+    function getPending() {
+      try {
+        const value = JSON.parse(localStorage.getItem(PENDING_KEY));
+        return Array.isArray(value) ? value : [];
+      } catch { return []; }
+    }
+    function savePending(items) {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(items));
+    }
 
     function getMembers() {
       try {
@@ -242,6 +283,7 @@
       $("memberCount").textContent = String(members.length).padStart(2, "0");
     }
 
+
     $("joinForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const name = $("memberName").value.trim();
@@ -258,27 +300,135 @@
       }
       let photo = "";
       if (file) {
-        photo = await new Promise((resolve, reject) => {
+        photo = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
+          reader.onerror = () => resolve("");
           reader.readAsDataURL(file);
-        }).catch(() => "");
+        });
       }
       const members = getMembers();
-      if (members.some(m => m.name.toLowerCase() === name.toLowerCase())) {
-        $("formStatus").textContent = "ชื่อนี้อยู่ในรายชื่อแล้ว ลองใช้ชื่ออื่นนะ";
+      const pending = getPending();
+      const lower = name.toLowerCase();
+      if (members.some(m => m.name.toLowerCase() === lower) ||
+          pending.some(m => m.name.toLowerCase() === lower)) {
+        $("formStatus").textContent = "ชื่อนี้มีอยู่แล้วหรือกำลังรออนุมัติ ลองใช้ชื่ออื่นนะ";
         return;
       }
-      members.push({ name, role, photo, initials: name.slice(0, 2).toUpperCase() });
+      pending.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        name, role, photo, initials: name.slice(0, 2).toUpperCase(),
+        submittedAt: new Date().toLocaleString("th-TH")
+      });
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify(members));
-        renderMembers();
+        savePending(pending);
         $("joinForm").reset();
-        $("formStatus").textContent = "เพิ่มชื่อเข้ารายชื่อบนอุปกรณ์นี้แล้ว ♡";
+        $("formStatus").textContent = "ส่งคำขอสมัครแล้ว ♡ กรุณารอหัวหน้าแก๊งอนุมัติก่อนจะแสดงเป็นสมาชิก";
       } catch {
         $("formStatus").textContent = "พื้นที่จัดเก็บไม่พอ ลองใช้รูปที่เล็กลง";
       }
+    });
+
+    function renderPending() {
+      const list = $("pendingList");
+      list.replaceChildren();
+      const pending = getPending();
+      if (!pending.length) {
+        const empty = document.createElement("p");
+        empty.className = "hint";
+        empty.textContent = "ยังไม่มีคำขอสมัครที่รออนุมัติ";
+        list.appendChild(empty);
+        return;
+      }
+      pending.forEach((application) => {
+        const card = document.createElement("div");
+        card.className = "member";
+        card.style.marginBottom = "12px";
+        card.style.textAlign = "left";
+        card.style.display = "flex";
+        card.style.alignItems = "center";
+        card.style.gap = "12px";
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.style.flexShrink = "0";
+        if (application.photo) {
+          const img = document.createElement("img");
+          img.src = application.photo;
+          img.alt = "รูปโปรไฟล์ " + application.name;
+          avatar.appendChild(img);
+        } else {
+          avatar.textContent = application.initials || "♡";
+        }
+        const details = document.createElement("div");
+        details.style.flex = "1";
+        details.style.minWidth = "0";
+        const name = document.createElement("h3");
+        name.textContent = application.name;
+        const role = document.createElement("div");
+        role.className = "role";
+        role.textContent = application.role || "สมาชิก";
+        const date = document.createElement("p");
+        date.textContent = "ส่งคำขอ: " + (application.submittedAt || "-");
+        details.append(name, role, date);
+        const buttons = document.createElement("div");
+        buttons.style.display = "flex";
+        buttons.style.flexDirection = "column";
+        buttons.style.gap = "7px";
+        const approve = document.createElement("button");
+        approve.className = "btn";
+        approve.type = "button";
+        approve.textContent = "อนุมัติ";
+        approve.addEventListener("click", () => decideApplication(application.id, true));
+        const reject = document.createElement("button");
+        reject.className = "btn secondary";
+        reject.type = "button";
+        reject.textContent = "ปฏิเสธ";
+        reject.addEventListener("click", () => decideApplication(application.id, false));
+        buttons.append(approve, reject);
+        card.append(avatar, details, buttons);
+        list.appendChild(card);
+      });
+    }
+
+    function decideApplication(id, approved) {
+      const pending = getPending();
+      const application = pending.find(item => item.id === id);
+      if (!application) return;
+      if (approved) {
+        const members = getMembers();
+        if (!members.some(m => m.name.toLowerCase() === application.name.toLowerCase())) {
+          members.push({ name: application.name, role: application.role, photo: application.photo, initials: application.initials });
+          try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(members));
+          } catch {
+            $("leaderStatus").textContent = "บันทึกไม่ได้ พื้นที่จัดเก็บอาจเต็ม";
+            return;
+          }
+        }
+      }
+      savePending(pending.filter(item => item.id !== id));
+      renderMembers();
+      renderPending();
+      $("leaderStatus").textContent = approved ? "อนุมัติ " + application.name + " แล้ว ♡" : "ปฏิเสธคำขอของ " + application.name + " แล้ว";
+    }
+
+    $("leaderLoginBtn").addEventListener("click", () => {
+      if ($("leaderPin").value === LEADER_PIN) {
+        $("leaderLogin").hidden = true;
+        $("leaderDashboard").hidden = false;
+        $("leaderStatus").textContent = "";
+        renderPending();
+      } else {
+        $("leaderStatus").textContent = "รหัสไม่ถูกต้อง ลองอีกครั้ง";
+      }
+    });
+    $("leaderPin").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") $("leaderLoginBtn").click();
+    });
+    $("leaderLogout").addEventListener("click", () => {
+      $("leaderPin").value = "";
+      $("leaderDashboard").hidden = true;
+      $("leaderLogin").hidden = false;
     });
 
     function setDiscordLinks() {
@@ -298,35 +448,8 @@
       });
     }
 
-    let musicUrl = "";
-    $("musicToggle").addEventListener("click", () => {
-      if ($("audio").paused && $("audio").src) {
-        $("audio").play().then(() => {
-          $("musicToggle").textContent = "Ⅱ หยุดเพลง";
-          $("musicStatus").textContent = "กำลังเล่นเพลง";
-        }).catch(() => $("musicStatus").textContent = "กดอีกครั้งเพื่ออนุญาตให้เล่นเพลง");
-      } else if (!$("audio").paused) {
-        $("audio").pause();
-        $("musicToggle").textContent = "▶ เล่นเพลง";
-        $("musicStatus").textContent = "หยุดเพลงแล้ว";
-      } else {
-        $("musicFile").click();
-      }
-    });
-    $("musicFile").addEventListener("change", () => {
-      const file = $("musicFile").files[0];
-      if (!file) return;
-      if (musicUrl) URL.revokeObjectURL(musicUrl);
-      musicUrl = URL.createObjectURL(file);
-      $("audio").src = musicUrl;
-      $("audio").play().then(() => {
-        $("musicToggle").textContent = "Ⅱ หยุดเพลง";
-        $("musicStatus").textContent = "กำลังเล่น: " + file.name;
-      }).catch(() => {
-        $("musicToggle").textContent = "▶ เล่นเพลง";
-        $("musicStatus").textContent = "เลือกเพลงแล้ว กดเล่นเพลงอีกครั้ง";
-      });
-    });
+    // YouTube music is embedded above. Mobile browsers require a user tap to start playback.
+
 
     renderMembers();
     setDiscordLinks();
