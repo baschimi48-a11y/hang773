@@ -17,15 +17,17 @@
     html { scroll-behavior: smooth; }
     body {
       margin: 0; color: #fff4fb; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      background: radial-gradient(ellipse at 50% -10%, #57133e 0, #1b0c1b 42%, var(--bg) 75%);
+      background: #08070b;
       min-height: 100vh; overflow-x: hidden;
     }
+    /* Animated uploaded GIF background. The dark overlay keeps the page text readable. */
     body::before {
-      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
-      background: radial-gradient(circle at 12% 35%, #ff168d15 0 2px, transparent 3px),
-                  radial-gradient(circle at 80% 70%, #ff78c41c 0 2px, transparent 3px);
-      background-size: 52px 52px, 73px 73px;
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        linear-gradient(180deg, rgba(5, 4, 9, .40), rgba(5, 4, 9, .68)),
+        url("773-background.gif") center center / cover no-repeat;
     }
+    body > * { position: relative; z-index: 1; }
     a { color: inherit; text-decoration: none; }
     button, input { font: inherit; }
     .wrap { width: min(1100px, calc(100% - 32px)); margin: auto; }
@@ -91,6 +93,8 @@
     }
     input:focus { border-color: #ff69bc; box-shadow: 0 0 0 3px #ff4fb81c; }
     input[type=file] { padding: 9px; font-size: .85rem; }
+    .contact-link { display: inline-flex; margin-top: 12px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); color: #ffd8ef; background: #ff4fb812; font-size: .82rem; font-weight: 800; overflow-wrap: anywhere; }
+    .contact-link:hover { background: #ff4fb82b; border-color: #ff82c9; }
     .hint { color: var(--muted); font-size: .8rem; line-height: 1.65; }
     .status { margin-top: 12px; color: #ffacd9; min-height: 1.4em; font-size: .9rem; }
     .feature { display: flex; gap: 12px; margin: 14px 0; align-items: flex-start; }
@@ -168,6 +172,9 @@
             <input id="memberName" name="memberName" maxlength="24" placeholder="เช่น PinkStar" required>
             <label for="memberRole">ตำแหน่ง / ฉายา</label>
             <input id="memberRole" name="memberRole" maxlength="30" placeholder="เช่น สมาชิก">
+            <label for="memberContact">ลิงก์ช่องทางติดต่อ (ไม่บังคับ)</label>
+            <input id="memberContact" name="memberContact" type="url" maxlength="500" placeholder="https://discord.com/users/... หรือ https://instagram.com/...">
+            <p class="hint">ใส่ลิงก์โปรไฟล์ Discord, Instagram, Facebook หรือช่องทางติดต่ออื่นที่เป็น URL ขึ้นต้นด้วย https://</p>
             <label for="memberPhoto">รูปโปรไฟล์ (ไม่บังคับ)</label>
             <input id="memberPhoto" name="memberPhoto" type="file" accept="image/*">
             <p class="hint">ไฟล์รูปจะถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น โปรดใช้รูปที่คุณมีสิทธิ์ใช้งาน</p>
@@ -216,7 +223,10 @@
         <div id="leaderDashboard" hidden>
           <div class="music-bar"><strong>คำขอที่รออนุมัติ</strong><button class="btn secondary" id="leaderLogout" type="button">ออกจากระบบ</button></div>
           <div id="pendingList" style="margin-top:16px"></div>
-          <p class="hint">การอนุมัติจะเพิ่มสมาชิกลงในรายชื่อบนเบราว์เซอร์เครื่องนี้</p>
+          <div class="music-bar" style="margin-top:26px"><strong>จัดการสมาชิกปัจจุบัน</strong></div>
+          <p class="hint">ตั้งหรือถอดผู้ดูแล และลบสมาชิกจากรายชื่อบนเว็บไซต์นี้</p>
+          <div id="memberManageList" style="margin-top:12px"></div>
+          <p class="hint">การอนุมัติและลบสมาชิกจะบันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น</p>
         </div>
       </div>
     </section>
@@ -254,6 +264,15 @@
       } catch { return defaultMembers; }
     }
 
+    function isSafeContactUrl(value) {
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }
+
     function renderMembers() {
       const members = getMembers();
       $("memberList").replaceChildren();
@@ -274,10 +293,19 @@
         name.textContent = member.name;
         const role = document.createElement("div");
         role.className = "role";
-        role.textContent = member.role || "สมาชิก";
+        role.textContent = member.isAdmin ? "ผู้ดูแล" : (member.role || "สมาชิก");
         const description = document.createElement("p");
         description.textContent = "♡ 773 family";
         card.append(avatar, name, role, description);
+        if (member.contactLink && isSafeContactUrl(member.contactLink)) {
+          const contact = document.createElement("a");
+          contact.className = "contact-link";
+          contact.href = member.contactLink;
+          contact.target = "_blank";
+          contact.rel = "noopener noreferrer";
+          contact.textContent = "ติดต่อสมาชิก ↗";
+          card.appendChild(contact);
+        }
         $("memberList").appendChild(card);
       });
       $("memberCount").textContent = String(members.length).padStart(2, "0");
@@ -289,7 +317,12 @@
       const name = $("memberName").value.trim();
       const role = $("memberRole").value.trim() || "สมาชิก";
       const file = $("memberPhoto").files[0];
+      const contactLink = $("memberContact").value.trim();
       if (!name) return;
+      if (contactLink && !isSafeContactUrl(contactLink)) {
+        $("formStatus").textContent = "กรุณาใส่ลิงก์ที่ถูกต้อง โดยขึ้นต้นด้วย https://";
+        return;
+      }
       if (file && !file.type.startsWith("image/")) {
         $("formStatus").textContent = "กรุณาเลือกไฟล์รูปภาพ";
         return;
@@ -317,7 +350,7 @@
       }
       pending.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-        name, role, photo, initials: name.slice(0, 2).toUpperCase(),
+        name, role, photo, contactLink, initials: name.slice(0, 2).toUpperCase(),
         submittedAt: new Date().toLocaleString("th-TH")
       });
       try {
@@ -328,6 +361,95 @@
         $("formStatus").textContent = "พื้นที่จัดเก็บไม่พอ ลองใช้รูปที่เล็กลง";
       }
     });
+
+    function renderMemberManagement() {
+      const list = $("memberManageList");
+      list.replaceChildren();
+      const members = getMembers();
+      if (!members.length) {
+        const empty = document.createElement("p");
+        empty.className = "hint";
+        empty.textContent = "ยังไม่มีสมาชิกในรายชื่อ";
+        list.appendChild(empty);
+        return;
+      }
+      members.forEach((member, index) => {
+        const row = document.createElement("div");
+        row.className = "member";
+        row.style.marginBottom = "10px";
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.gap = "12px";
+        row.style.textAlign = "left";
+
+        const details = document.createElement("div");
+        details.style.flex = "1";
+        details.style.minWidth = "0";
+        const name = document.createElement("strong");
+        name.textContent = member.name;
+        const role = document.createElement("div");
+        role.className = "role";
+        role.textContent = member.isAdmin ? "ผู้ดูแลเว็บไซต์" : (member.role || "สมาชิก");
+        details.append(name, role);
+
+        const actions = document.createElement("div");
+        actions.style.display = "flex";
+        actions.style.flexDirection = "column";
+        actions.style.gap = "7px";
+        actions.style.flexShrink = "0";
+
+        const adminToggle = document.createElement("button");
+        adminToggle.className = member.isAdmin ? "btn secondary" : "btn";
+        adminToggle.type = "button";
+        adminToggle.textContent = member.isAdmin ? "ถอดผู้ดูแล" : "ตั้งเป็นผู้ดูแล";
+        adminToggle.setAttribute("aria-label", (member.isAdmin ? "ถอดสิทธิ์ผู้ดูแลของ " : "ตั้ง ") + member.name);
+        adminToggle.addEventListener("click", () => toggleMemberAdmin(index));
+
+        const remove = document.createElement("button");
+        remove.className = "btn secondary";
+        remove.type = "button";
+        remove.textContent = "ลบสมาชิก";
+        remove.setAttribute("aria-label", "ลบสมาชิก " + member.name);
+        remove.addEventListener("click", () => removeMember(index));
+        actions.append(adminToggle, remove);
+        row.append(details, actions);
+        list.appendChild(row);
+      });
+    }
+
+    function toggleMemberAdmin(index) {
+      const members = getMembers();
+      const member = members[index];
+      if (!member) return;
+      const makeAdmin = !member.isAdmin;
+      const verb = makeAdmin ? "ตั้ง " + member.name + " เป็นผู้ดูแล" : "ถอดสิทธิ์ผู้ดูแลของ " + member.name;
+      if (!confirm("ยืนยัน" + verb + " หรือไม่?")) return;
+      member.isAdmin = makeAdmin;
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(members));
+        renderMembers();
+        renderMemberManagement();
+        $("leaderStatus").textContent = makeAdmin ? "ตั้ง " + member.name + " เป็นผู้ดูแลแล้ว" : "ถอดสิทธิ์ผู้ดูแลของ " + member.name + " แล้ว";
+      } catch {
+        $("leaderStatus").textContent = "บันทึกไม่ได้ พื้นที่จัดเก็บอาจเต็ม";
+      }
+    }
+
+    function removeMember(index) {
+      const members = getMembers();
+      const member = members[index];
+      if (!member) return;
+      if (!confirm("ยืนยันลบสมาชิก “" + member.name + "” ออกจากรายชื่อหรือไม่?")) return;
+      members.splice(index, 1);
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(members));
+        renderMembers();
+        renderMemberManagement();
+        $("leaderStatus").textContent = "ลบสมาชิก " + member.name + " แล้ว";
+      } catch {
+        $("leaderStatus").textContent = "บันทึกไม่ได้ พื้นที่จัดเก็บอาจเต็ม";
+      }
+    }
 
     function renderPending() {
       const list = $("pendingList");
@@ -370,6 +492,15 @@
         const date = document.createElement("p");
         date.textContent = "ส่งคำขอ: " + (application.submittedAt || "-");
         details.append(name, role, date);
+        if (application.contactLink && isSafeContactUrl(application.contactLink)) {
+          const contact = document.createElement("a");
+          contact.className = "contact-link";
+          contact.href = application.contactLink;
+          contact.target = "_blank";
+          contact.rel = "noopener noreferrer";
+          contact.textContent = "เปิดช่องทางติดต่อ ↗";
+          details.appendChild(contact);
+        }
         const buttons = document.createElement("div");
         buttons.style.display = "flex";
         buttons.style.flexDirection = "column";
@@ -397,7 +528,7 @@
       if (approved) {
         const members = getMembers();
         if (!members.some(m => m.name.toLowerCase() === application.name.toLowerCase())) {
-          members.push({ name: application.name, role: application.role, photo: application.photo, initials: application.initials });
+          members.push({ name: application.name, role: application.role, photo: application.photo, contactLink: application.contactLink || "", initials: application.initials });
           try {
             localStorage.setItem(STORE_KEY, JSON.stringify(members));
           } catch {
@@ -409,6 +540,7 @@
       savePending(pending.filter(item => item.id !== id));
       renderMembers();
       renderPending();
+      renderMemberManagement();
       $("leaderStatus").textContent = approved ? "อนุมัติ " + application.name + " แล้ว ♡" : "ปฏิเสธคำขอของ " + application.name + " แล้ว";
     }
 
@@ -418,6 +550,7 @@
         $("leaderDashboard").hidden = false;
         $("leaderStatus").textContent = "";
         renderPending();
+        renderMemberManagement();
       } else {
         $("leaderStatus").textContent = "รหัสไม่ถูกต้อง ลองอีกครั้ง";
       }
